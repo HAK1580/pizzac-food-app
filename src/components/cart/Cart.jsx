@@ -32,14 +32,14 @@ const Cart = () => {
   }
 
   return createPortal(
-    <div className='fixed inset-0 z-[100]'>
+    <div className='fixed inset-0 z-100'>
       <div
         onClick={() => dispatch(closeCart())}
         className='absolute inset-0 bg-black/50 animate-[fadeIn_0.2s_ease-out]'
       />
 
       {/* h-dvh fixes the mobile address-bar overflow */}
-      <div className='absolute inset-y-0 right-0 h-dvh w-full sm:w-[400px] bg-white shadow-2xl flex flex-col animate-[slideIn_0.25s_ease-out]'>
+      <div className='absolute inset-y-0 right-0 h-dvh w-full sm:w-100 bg-white shadow-2xl flex flex-col animate-[slideIn_0.25s_ease-out]'>
         {/* Header */}
         <div className='flex items-center justify-between px-4 sm:px-5 py-3 sm:py-4 border-b border-gray-100 bg-white shrink-0'>
           <h2 className='text-lg font-bold text-gray-800 flex items-center gap-2'>

@@ -5,7 +5,9 @@ import { useNavigate } from 'react-router-dom'
 import axios from 'axios'
 import toast from 'react-hot-toast'
 import { ShoppingBag, MapPin, Phone, Banknote, CreditCard, PartyPopper, User, Mail } from 'lucide-react'
-import { clearCart } from './cart/cartSlice'
+import { clearCart, getGuestId } from './cart/cartSlice'
+
+const api = import.meta.env.VITE_API_URL || 'http://localhost:3000'
 
 const Checkout = () => {
     const items = useSelector((state) => state.cart.items)
@@ -13,7 +15,7 @@ const Checkout = () => {
     const navigate = useNavigate()
 
     const token = localStorage.getItem('token')
-    const guestId = localStorage.getItem('guestId')
+    const guestId = getGuestId()
 
     const {
         register,
@@ -27,16 +29,13 @@ const Checkout = () => {
 
     const onSubmit = async (data) => {
         try {
-            const headers = {}
+            const headers = { 'x-guest-id': guestId }
             if (token) {
                 headers['Authorization'] = `Bearer ${token}`
             }
-            if (guestId) {
-                headers['x-guest-id'] = guestId
-            }
 
             const response = await axios.post(
-                'http://localhost:3000/api/orders',
+                `${api}/api/orders`,
                 {
                     deliveryAddress: {
                         street: data.street,
@@ -44,8 +43,7 @@ const Checkout = () => {
                         phone: data.phone,
                     },
                     paymentMethod: data.paymentMethod,
-                    guestId: guestId || undefined,
-                    cartItems: items, // Send items in payload as direct fallback
+                    guestId,
                     guestInfo: !token ? {
                         name: data.guestName || '',
                         email: data.guestEmail || '',
