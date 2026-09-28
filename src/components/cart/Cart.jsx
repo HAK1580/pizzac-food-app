@@ -3,17 +3,18 @@ import { createPortal } from 'react-dom'
 import { useSelector, useDispatch } from 'react-redux'
 import { X, Minus, Plus, Trash2, ShoppingBag, Loader2 } from 'lucide-react'
 import { fetchCart, updateQtyAPI, removeFromCartAPI, closeCart } from '../cart/cartSlice'
-import { Navigate, useNavigate } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom'
+
 const Cart = () => {
   const items = useSelector((state) => state.cart.items)
   const isOpen = useSelector((state) => state.cart.isOpen)
   const loading = useSelector((state) => state.cart.loading)
   const dispatch = useDispatch()
-  const navigate=useNavigate()
+  const navigate = useNavigate()
 
   useEffect(() => {
     if (isOpen) dispatch(fetchCart())
-  }, [isOpen])
+  }, [isOpen, dispatch])
 
   useEffect(() => {
     document.body.style.overflow = isOpen ? 'hidden' : ''
@@ -25,12 +26,22 @@ const Cart = () => {
 
   if (!isOpen) return null
 
-  return createPortal(
-    <div className='fixed inset-0 z-[100] h-screen w-screen'>
-      <div onClick={() => dispatch(closeCart())} className='absolute inset-0 bg-black/50 animate-[fadeIn_0.2s_ease-out]' />
+  const handleCheckout = () => {
+    dispatch(closeCart())
+    navigate('/checkout')
+  }
 
-      <div className='absolute inset-y-0 right-0 h-screen w-full sm:w-[400px] bg-white shadow-2xl flex flex-col animate-[slideIn_0.25s_ease-out]'>
-        <div className='flex items-center justify-between px-5 py-4 border-b border-gray-100 bg-white shrink-0'>
+  return createPortal(
+    <div className='fixed inset-0 z-[100]'>
+      <div
+        onClick={() => dispatch(closeCart())}
+        className='absolute inset-0 bg-black/50 animate-[fadeIn_0.2s_ease-out]'
+      />
+
+      {/* h-dvh fixes the mobile address-bar overflow */}
+      <div className='absolute inset-y-0 right-0 h-dvh w-full sm:w-[400px] bg-white shadow-2xl flex flex-col animate-[slideIn_0.25s_ease-out]'>
+        {/* Header */}
+        <div className='flex items-center justify-between px-4 sm:px-5 py-3 sm:py-4 border-b border-gray-100 bg-white shrink-0'>
           <h2 className='text-lg font-bold text-gray-800 flex items-center gap-2'>
             <ShoppingBag size={20} className='text-amber-600' />
             Your Cart
@@ -40,25 +51,33 @@ const Cart = () => {
               </span>
             )}
           </h2>
-          <button onClick={() => dispatch(closeCart())} className='p-1.5 rounded-full hover:bg-gray-100 cursor-pointer transition-colors' aria-label='Close cart'>
+          <button
+            onClick={() => dispatch(closeCart())}
+            className='p-1.5 rounded-full hover:bg-gray-100 cursor-pointer transition-colors'
+            aria-label='Close cart'
+          >
             <X size={20} />
           </button>
         </div>
 
+        {/* Body: min-h-0 lets this area shrink and scroll instead of pushing the footer out */}
         {loading ? (
-          <div className='flex-1 flex items-center justify-center bg-white'>
+          <div className='flex-1 min-h-0 flex items-center justify-center bg-white'>
             <Loader2 size={28} className='animate-spin text-amber-600' />
           </div>
         ) : items.length === 0 ? (
-          <div className='flex-1 flex flex-col items-center justify-center gap-3 text-gray-400 px-6 bg-white'>
+          <div className='flex-1 min-h-0 flex flex-col items-center justify-center gap-3 text-gray-400 px-6 bg-white'>
             <ShoppingBag size={40} strokeWidth={1.5} />
             <p className='text-sm'>Your cart is empty</p>
-            <button onClick={() => dispatch(closeCart())} className='mt-2 text-amber-600 text-sm font-medium hover:underline cursor-pointer'>
+            <button
+              onClick={() => dispatch(closeCart())}
+              className='mt-2 text-amber-600 text-sm font-medium hover:underline cursor-pointer'
+            >
               Browse the menu
             </button>
           </div>
         ) : (
-          <div className='flex-1 overflow-y-auto px-5 py-4 bg-white'>
+          <div className='flex-1 min-h-0 overflow-y-auto overscroll-contain px-4 sm:px-5 py-4 bg-white'>
             <div className='flex flex-col gap-4'>
               {items.map((item) => (
                 <div key={item._id} className='flex gap-3 items-start pb-4 border-b border-gray-50 last:border-0'>
@@ -108,13 +127,17 @@ const Cart = () => {
           </div>
         )}
 
+        {/* Footer: extra bottom padding for phones with a home bar */}
         {!loading && items.length > 0 && (
-          <div className='border-t border-gray-100 px-5 py-4 flex flex-col gap-3 bg-white shrink-0'>
+          <div className='border-t border-gray-100 px-4 sm:px-5 pt-4 pb-[max(1rem,env(safe-area-inset-bottom))] flex flex-col gap-3 bg-white shrink-0'>
             <div className='flex items-center justify-between text-sm text-gray-600'>
               <span>Subtotal</span>
               <span className='font-semibold text-gray-800'>Rs{subtotal.toFixed(2)}</span>
             </div>
-            <button onClick={()=>navigate("/checkout")}  className='w-full bg-amber-600 text-white rounded-xl py-3 font-medium hover:bg-amber-700 transition-colors cursor-pointer'>
+            <button
+              onClick={handleCheckout}
+              className='w-full bg-amber-600 text-white rounded-xl py-3 font-medium hover:bg-amber-700 transition-colors cursor-pointer'
+            >
               Checkout — Rs{subtotal.toFixed(2)}
             </button>
           </div>

@@ -4,13 +4,16 @@ import { useSelector, useDispatch } from 'react-redux'
 import { useNavigate } from 'react-router-dom'
 import axios from 'axios'
 import toast from 'react-hot-toast'
-import { ShoppingBag, MapPin, Phone, Banknote, CreditCard, PartyPopper } from 'lucide-react'
+import { ShoppingBag, MapPin, Phone, Banknote, CreditCard, PartyPopper, User, Mail } from 'lucide-react'
 import { clearCart } from './cart/cartSlice'
 
 const Checkout = () => {
     const items = useSelector((state) => state.cart.items)
     const dispatch = useDispatch()
     const navigate = useNavigate()
+
+    const token = localStorage.getItem('token')
+    const guestId = localStorage.getItem('guestId')
 
     const {
         register,
@@ -24,8 +27,16 @@ const Checkout = () => {
 
     const onSubmit = async (data) => {
         try {
+            const headers = {}
+            if (token) {
+                headers['Authorization'] = `Bearer ${token}`
+            }
+            if (guestId) {
+                headers['x-guest-id'] = guestId
+            }
+
             const response = await axios.post(
-                'http://localhost:3000/api/order',
+                'http://localhost:3000/api/orders',
                 {
                     deliveryAddress: {
                         street: data.street,
@@ -33,8 +44,14 @@ const Checkout = () => {
                         phone: data.phone,
                     },
                     paymentMethod: data.paymentMethod,
+                    guestId: guestId || undefined,
+                    cartItems: items, // Send items in payload as direct fallback
+                    guestInfo: !token ? {
+                        name: data.guestName || '',
+                        email: data.guestEmail || '',
+                    } : undefined,
                 },
-                { headers: { Authorization: `Bearer ${localStorage.getItem('token')}` } }
+                { headers }
             )
 
             dispatch(clearCart())
@@ -81,7 +98,7 @@ const Checkout = () => {
 
                             <div className='flex flex-col gap-3 max-h-72 overflow-y-auto pr-1'>
                                 {items.map((item) => (
-                                    <div key={item._id} className='flex items-center gap-3 bg-teal-50 rounded-xl p-2 border border-teal-100'>
+                                    <div key={item._id || item.id} className='flex items-center gap-3 bg-teal-50 rounded-xl p-2 border border-teal-100'>
                                         <img
                                             src={item.img}
                                             alt={item.name}
@@ -113,6 +130,46 @@ const Checkout = () => {
                             onSubmit={handleSubmit(onSubmit)}
                             className='bg-white border-2 border-violet-200 rounded-3xl p-5 shadow-md flex flex-col gap-4'
                         >
+                            {!token && (
+                                <div className='flex flex-col gap-3 pb-2 border-b-2 border-dashed border-violet-100'>
+                                    <h2 className='text-lg font-bold text-gray-800 flex items-center gap-2'>
+                                        <User size={18} className='text-violet-600' />
+                                        Contact Information
+                                    </h2>
+                                    <div>
+                                        <input
+                                            type='text'
+                                            placeholder='Your Full Name'
+                                            className='border-2 border-gray-200 bg-white text-gray-800 placeholder-gray-400 rounded-xl px-4 py-2.5 outline-none focus:border-violet-500 w-full text-sm transition-colors'
+                                            {...register('guestName', { required: 'Name is required for guest checkout' })}
+                                        />
+                                        {errors.guestName && (
+                                            <p className='text-pink-600 text-xs mt-1'>{errors.guestName.message}</p>
+                                        )}
+                                    </div>
+                                    <div>
+                                        <div className='relative'>
+                                            <Mail size={16} className='absolute left-3 top-1/2 -translate-y-1/2 text-violet-500' />
+                                            <input
+                                                type='email'
+                                                placeholder='Email Address'
+                                                className='border-2 border-gray-200 bg-white text-gray-800 placeholder-gray-400 rounded-xl pl-9 pr-4 py-2.5 outline-none focus:border-violet-500 w-full text-sm transition-colors'
+                                                {...register('guestEmail', {
+                                                    required: 'Email is required for order updates',
+                                                    pattern: {
+                                                        value: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
+                                                        message: 'Enter a valid email address',
+                                                    },
+                                                })}
+                                            />
+                                        </div>
+                                        {errors.guestEmail && (
+                                            <p className='text-pink-600 text-xs mt-1'>{errors.guestEmail.message}</p>
+                                        )}
+                                    </div>
+                                </div>
+                            )}
+
                             <h2 className='text-lg font-bold text-gray-800 flex items-center gap-2'>
                                 <MapPin size={18} className='text-teal-600' />
                                 Delivery Details
